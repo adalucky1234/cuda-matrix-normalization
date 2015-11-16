@@ -172,6 +172,14 @@ int main(int argc, char **argv) {
 /* Provided global variables are MAXN, N, A[][] and B[][],
  * defined in the beginning of this code.  B[][] is initialized to zeros.
  */
+
+ #define CHECK_ERR(x)                                    \
+   if (x != cudaSuccess) {                               \
+     fprintf(stderr,"%s in %s at line %d\n",             \
+ 	    cudaGetErrorString(err),__FILE__,__LINE__);	\
+     exit(-1);						\
+  }                                                     \
+
 void matrixNorm() {
   int row, col;
   float mu, sigma; // Mean and Standard Deviation
@@ -193,6 +201,23 @@ void matrixNorm() {
             else
                 B[row][col] = (A[row][col] - mu) / sigma;
         }
+    }
+
+}
+
+void matrixNorm() {
+    int row, col;
+    float mu, sigma;
+
+    printf("Computing in Parallel");
+
+    cudaErrot_t err;
+
+    for(col=0; col < N; col++) {
+        float * h_col = A[][col];
+        float * h_res = B[][col];
+        err = cudaMalloc((void **) &d_A, sizeof(float)*n);
+        CHECK_ERR(err);
     }
 
 }
