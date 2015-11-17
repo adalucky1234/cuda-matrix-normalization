@@ -180,22 +180,22 @@ int main(int argc, char **argv) {
      exit(-1);						\
   }                                                    \
 
-  __global__ void normCalc (float* d_A, float* d_B, float* d_C, int n) {
+  __global__ void normCalc (float* ptr_A, float* ptr_B, int n) {
     int col = blockDim.x * blockIdx.x + threadIdx.x;
     if (col < n) {
-        mu = 0.0;
-        for (row=0; row < N; row++)
-            mu += A[row][col];
-        mu /= (float) N;
-        sigma = 0.0;
-        for (row=0; row < N; row++)
-            sigma += powf(A[row][col] - mu, 2.0);
-        sigma /= (float) N;
-        for (row=0; row < N; row++) {
-            if (sigma == 0.0)
-                B[row][col] = 0.0;
+        for (row=0; row < n; row++)
+            mu[col] += (*ptr_A+col)[row];
+        mu /= (float) n;
+        _syncthreads();
+        for (row=0; row < n; row++)
+            sigma[col] += powf((*ptr_A+col)[row] - mu[col], 2.0);
+        sigma[col] /= (float) n;
+        _syncthreads();
+        for (row=0; row < n; row++) {
+            if (sigma[col] == 0.0)
+                (*ptr_B+col)[row] = 0.0;
             else
-                B[row][col] = (A[row][col] - mu) / sigma;
+                (*ptr_B+col)[row]  = ((*ptr_A+col)[row]  - mu[col]) / sigma[col];
         }
     }
 }
@@ -209,11 +209,23 @@ void matrixNorm() {
 
     cudaErrot_t err;
 
-    for(col=0; col < N; col++) {
-        float * h_col = A[][col];
-        float * h_res = B[][col];
-        err = cudaMalloc((void **) &d_A, sizeof(float)*n);
-        CHECK_ERR(err);
-    }
+    float (*ptr_A)[N];
+    float (*ptr_B)[N];
+
+    float mu[N];
+    float sigma[N];
+    memset(mu, 0.0, sizeof(mu));
+    memset(sigma, 0.0, sizeof(sigma));
+
+
+    err = cudaMalloc((void **) &ptr_A, sizeof(float)*n);
+    CHECK_ERR(err);
+    err = cudaMalloc((void **) &ptr_B, sizeof(float)*n);
+    CHECK_ERR(err);
+    err = cudaMalloc((void **) &mu, sizeof(float)*n);
+    CHECK_ERR(err);
+    err = cudaMalloc((void **) &sigma, sizeof(float)*n);
+    CHECK_ERR(err);
+
 
 }
