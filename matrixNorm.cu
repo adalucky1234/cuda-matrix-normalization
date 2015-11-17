@@ -185,18 +185,18 @@ int main(int argc, char **argv) {
     int row;
     if (col < n) {
         for (row=0; row < n; row++)
-            mu[col] += (*ptr_A+col)[row];
-        mu /= (float) n;
+            mu[col] += (ptr_A+col)[row];
+        mu[col] /= (float) n;
         __syncthreads();
         for (row=0; row < n; row++)
-            sigma[col] += powf((*ptr_A+col)[row] - mu[col], 2.0);
+            sigma[col] += powf((ptr_A+col)[row] - mu[col], 2.0);
         sigma[col] /= (float) n;
         __syncthreads();
         for (row=0; row < n; row++) {
             if (sigma[col] == 0.0)
-                (*ptr_B+col)[row] = 0.0;
+                (ptr_B+col)[row] = 0.0;
             else
-                (*ptr_B+col)[row]  = ((*ptr_A+col)[row]  - mu[col]) / sigma[col];
+                (ptr_B+col)[row]  = ((ptr_A+col)[row]  - mu[col]) / sigma[col];
         }
     }
 }
@@ -208,8 +208,8 @@ void matrixNorm() {
 
     cudaError_t err;
 
-    float (*ptr_A)[N];
-    float (*ptr_B)[N];
+    float (*ptr_A)[MAXN];
+    float (*ptr_B)[MAXN];
 
     ptr_A = A;
     ptr_B = B;
