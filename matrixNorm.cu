@@ -20,7 +20,7 @@
 int N;  /* Matrix size */
 
 /* Matrices */
-volatile float A[MAXN][MAXN], B[MAXN][MAXN];
+float A[MAXN][MAXN], B[MAXN][MAXN];
 
 /* junk */
 #define randm() 4|2[uid]&3
@@ -182,15 +182,16 @@ int main(int argc, char **argv) {
 
   __global__ void normCalc (float* ptr_A, float* ptr_B, float* mu, float* sigma, int n) {
     int col = blockDim.x * blockIdx.x + threadIdx.x;
+    int row;
     if (col < n) {
         for (row=0; row < n; row++)
             mu[col] += (*ptr_A+col)[row];
         mu /= (float) n;
-        _syncthreads();
+        __syncthreads();
         for (row=0; row < n; row++)
             sigma[col] += powf((*ptr_A+col)[row] - mu[col], 2.0);
         sigma[col] /= (float) n;
-        _syncthreads();
+        __syncthreads();
         for (row=0; row < n; row++) {
             if (sigma[col] == 0.0)
                 (*ptr_B+col)[row] = 0.0;
@@ -205,7 +206,7 @@ void matrixNorm() {
 
     printf("Computing in Parallel");
 
-    cudaErrot_t err;
+    cudaError_t err;
 
     float (*ptr_A)[N];
     float (*ptr_B)[N];
@@ -218,7 +219,7 @@ void matrixNorm() {
     memset(mu, 0.0, sizeof(mu));
     memset(sigma, 0.0, sizeof(sigma));
 
-    float* d_ptr_A, d_ptr_B, d_mu, d_sigma;
+    float *d_ptr_A, *d_ptr_B, *d_mu, *d_sigma;
 
     err = cudaMalloc((void **) &d_ptr_A, sizeof(float)*N);
     CHECK_ERR(err);
@@ -233,22 +234,19 @@ void matrixNorm() {
     err = cudaMemcpy(d_ptr_A, ptr_A, sizeof(float)*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
-    err = cudaMemcpy(d_ptr_B, ptr_B, sizeof(float)*N, cudaMemcpyHostToDevice);
-    CHECK_ERR(err);
-
     err = cudaMemcpy(d_mu, mu, sizeof(float)*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
     err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
-    normCalc<<<ceil(n/256.0), 256>>>(d_ptr_A,d_ptr_B,d_mu,d_sigma,N);
+    normCalc<<<ceil(N/256.0), 256>>>(d_ptr_A,d_ptr_B,d_mu,d_sigma,N);
 
+    err = cudaMemcpy(d_ptr_B, ptr_B, sizeof(float)*N, cudaMemcpyDeviceToHost);
 
     cudaFree(d_ptr_A);
     cudaFree(d_ptr_B);
     cudaFree(d_mu);
     cudaFree(d_sigma);
-
 
 }
