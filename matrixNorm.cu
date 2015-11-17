@@ -245,4 +245,10 @@ void matrixNorm() {
     normCalc<<<ceil(n/256.0), 256>>>(d_ptr_A,d_ptr_B,d_mu,d_sigma,N);
 
 
+    cudaFree(d_ptr_A);
+    cudaFree(d_ptr_B);
+    cudaFree(d_mu);
+    cudaFree(d_sigma);
+
+
 }
