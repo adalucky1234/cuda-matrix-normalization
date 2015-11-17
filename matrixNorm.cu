@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
      exit(-1);						\
   }                                                    \
 
-  __global__ void normCalc (float* ptr_A, float* ptr_B, int n) {
+  __global__ void normCalc (float* ptr_A, float* ptr_B, float* mu, float* sigma, int n) {
     int col = blockDim.x * blockIdx.x + threadIdx.x;
     if (col < n) {
         for (row=0; row < n; row++)
@@ -217,14 +217,28 @@ void matrixNorm() {
     memset(mu, 0.0, sizeof(mu));
     memset(sigma, 0.0, sizeof(sigma));
 
+    float* d_ptr_A, d_ptr_B, d_mu, d_sigma;
 
-    err = cudaMalloc((void **) &ptr_A, sizeof(float)*n);
+    err = cudaMalloc((void **) &d_ptr_A, sizeof(float)*N);
     CHECK_ERR(err);
-    err = cudaMalloc((void **) &ptr_B, sizeof(float)*n);
+    err = cudaMalloc((void **) &d_ptr_B, sizeof(float)*N);
     CHECK_ERR(err);
-    err = cudaMalloc((void **) &mu, sizeof(float)*n);
+    err = cudaMalloc((void **) &d_mu, sizeof(float)*N);
     CHECK_ERR(err);
-    err = cudaMalloc((void **) &sigma, sizeof(float)*n);
+    err = cudaMalloc((void **) &d_sigma, sizeof(float)*N);
+    CHECK_ERR(err);
+
+
+    err = cudaMemcpy(d_ptr_A, ptr_A, sizeof(float)*N, cudaMemcpyHostToDevice);
+    CHECK_ERR(err);
+
+    err = cudaMemcpy(d_ptr_B, ptr_B, sizeof(float)*N, cudaMemcpyHostToDevice);
+    CHECK_ERR(err);
+
+    err = cudaMemcpy(d_mu, mu, sizeof(float)*N, cudaMemcpyHostToDevice);
+    CHECK_ERR(err);
+
+    err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
 
