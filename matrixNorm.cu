@@ -202,8 +202,6 @@ int main(int argc, char **argv) {
 
 
 void matrixNorm() {
-    int row, col;
-    float mu, sigma; // Mean and Standard Deviation
 
     printf("Computing in Parallel");
 
@@ -211,6 +209,9 @@ void matrixNorm() {
 
     float (*ptr_A)[N];
     float (*ptr_B)[N];
+
+    ptr_A = A;
+    ptr_B = B;
 
     float mu[N];
     float sigma[N];
@@ -240,6 +241,8 @@ void matrixNorm() {
 
     err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
+
+    normCalc<<<ceil(n/256.0), 256>>>(d_ptr_A,d_ptr_B,d_mu,d_sigma,N);
 
 
 }
