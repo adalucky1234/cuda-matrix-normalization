@@ -180,23 +180,23 @@ int main(int argc, char **argv) {
      exit(-1);						\
   }                                                    \
 
-  __global__ void normCalc (float* d_ptr_A, float* d_ptr_B, float* d_mu, float* d_sigma, int n) {
+  __global__ void normCalc (float* d_A, float* d_B, float* d_mu, float* d_sigma, int n) {
     int col = blockDim.x * blockIdx.x + threadIdx.x;
     int row;
     if (col < n) {
         for (row=0; row < n; row++)
-            d_mu[col] += (d_ptr_A+col)[row];
+            d_mu[col] += d_A[col + n*row];
         d_mu[col] /= (float) n;
         __syncthreads();
         for (row=0; row < n; row++)
-            d_sigma[col] += powf((d_ptr_A+col)[row] - d_mu[col], 2.0);
+            d_sigma[col] += powf(d_A[col + n*row] - d_mu[col], 2.0);
         d_sigma[col] /= (float) n;
         __syncthreads();
         for (row=0; row < n; row++) {
             if (d_sigma[col] == 0.0)
-                (d_ptr_B+col)[row] = 0.0;
+                d_B[col + n*row] = 0.0;
             else
-                (d_ptr_B+col)[row]  = ((d_ptr_A+col)[row]  - d_mu[col]) / d_sigma[col];
+                d_B[col + n*row]  = (d_A[col + n*row]  - d_mu[col]) / d_sigma[col];
         }
     }
 }
@@ -208,55 +208,41 @@ void matrixNorm() {
 
     cudaError_t err;
 
-    float (*ptr_A)[MAXN];
-    float (*ptr_B)[MAXN];
-
-    ptr_A = A;
-    ptr_B = B;
-
     float mu[N];
     float sigma[N];
     memset(mu, 0.0, sizeof(mu));
     memset(sigma, 0.0, sizeof(sigma));
 
-    float *d_ptr_A, *d_ptr_B, *d_mu, *d_sigma;
+    float *d_A, *d_B, *d_mu, *d_sigma;
 
-    err = cudaMalloc((float **) &d_ptr_A, sizeof(float)*N);
+    err = cudaMalloc((float **) &d_A, sizeof(float)*N*N);
     CHECK_ERR(err);
-    err = cudaMalloc((float **) &d_ptr_B, sizeof(float)*N);
+    err = cudaMalloc((float **) &d_B, sizeof(float)*N*N);
     CHECK_ERR(err);
-    err = cudaMalloc((float **) &d_mu, sizeof(float)*N);
+    err = cudaMalloc((float **) &d_mu, sizeof(float)*N*N);
     CHECK_ERR(err);
-    err = cudaMalloc((float **) &d_sigma, sizeof(float)*N);
-    CHECK_ERR(err);
-
-
-    err = cudaMemcpy(d_ptr_A, ptr_A, sizeof(float)*N, cudaMemcpyHostToDevice);
+    err = cudaMalloc((float **) &d_sigma, sizeof(float)*N*N);
     CHECK_ERR(err);
 
-    err = cudaMemcpy(d_mu, mu, sizeof(float)*N, cudaMemcpyHostToDevice);
+
+    err = cudaMemcpy(d_A, A, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
-    err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N, cudaMemcpyHostToDevice);
+    err = cudaMemcpy(d_mu, mu, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
-    normCalc<<<ceil(N/32.0), 32>>>(d_ptr_A,d_ptr_B,d_mu,d_sigma,N);
+    err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N*N, cudaMemcpyHostToDevice);
+    CHECK_ERR(err);
 
-    err = cudaMemcpy(d_ptr_B, ptr_B, sizeof(float)*N, cudaMemcpyDeviceToHost);
+    dim3 BlockSize(1,1);
+    dim3 GridSize(N/BlockSize.x, N/BlockSize.y);
+    normCalc<<<GridSize,BlockSize>>>(d_A, d_B, d_mu, d_sigma, N);
 
-    int row, col;
+    err = cudaMemcpy(B, (d_B), sizeof(float)*N*N, cudaMemcpyDeviceToHost);
+    CHECK_ERR(err);
 
-    if (N < 10) {
-        printf("\nptr_B =\n\t");
-        for (row = 0; row < N; row++) {
-            for (col = 0; col < N; col++) {
-                printf("%1.10f%s", (ptr_B+col)[row], (col < N-1) ? ", " : ";\n\t");
-            }
-        }
-    }
-
-    cudaFree(d_ptr_A);
-    cudaFree(d_ptr_B);
+    cudaFree(d_A);
+    cudaFree(d_B);
     cudaFree(d_mu);
     cudaFree(d_sigma);
 
