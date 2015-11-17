@@ -178,15 +178,11 @@ int main(int argc, char **argv) {
      fprintf(stderr,"%s in %s at line %d\n",             \
  	    cudaGetErrorString(err),__FILE__,__LINE__);	\
      exit(-1);						\
-  }                                                     \
+  }                                                    \
 
-void matrixNorm() {
-  int row, col;
-  float mu, sigma; // Mean and Standard Deviation
-
-  printf("Computing Serially.\n");
-
-    for (col=0; col < N; col++) {
+  __global__ void normCalc (float* d_A, float* d_B, float* d_C, int n) {
+    int col = blockDim.x * blockIdx.x + threadIdx.x;
+    if (col < n) {
         mu = 0.0;
         for (row=0; row < N; row++)
             mu += A[row][col];
@@ -202,12 +198,12 @@ void matrixNorm() {
                 B[row][col] = (A[row][col] - mu) / sigma;
         }
     }
-
 }
+
 
 void matrixNorm() {
     int row, col;
-    float mu, sigma;
+    float mu, sigma; // Mean and Standard Deviation
 
     printf("Computing in Parallel");
 
