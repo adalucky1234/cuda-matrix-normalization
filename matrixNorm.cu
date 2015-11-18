@@ -242,9 +242,9 @@ void matrixNorm() {
     } else {
         x = y = 64;
     }
-    dim3 BlockSize(x,y);
-    dim3 GridSize(N/BlockSize.x, N/BlockSize.y);
-    normCalc<<<GridSize,BlockSize>>>(d_A, d_B, d_mu, d_sigma, N);
+    //dim3 BlockSize(x,y);
+    //dim3 GridSize(N/BlockSize.x, N/BlockSize.y);
+    normCalc<<<64*64,64>>>(d_A, d_B, d_mu, d_sigma, N);
 
     err = cudaMemcpy(B, (d_B), sizeof(float)*N*N, cudaMemcpyDeviceToHost);
     CHECK_ERR(err);
