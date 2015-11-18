@@ -1,10 +1,10 @@
 /* Matrix normalization.
- * Compile with "gcc matrixNorm.c"
- */
+* Compile with "gcc matrixNorm.c"
+*/
 
 /* ****** ADD YOUR CODE AT THE END OF THIS FILE. ******
- * You need not submit the provided code.
- */
+* You need not submit the provided code.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,41 +30,41 @@ void matrixNorm();
 
 /* returns a seed for srand based on the time */
 unsigned int time_seed() {
-  struct timeval t;
-  struct timezone tzdummy;
+    struct timeval t;
+    struct timezone tzdummy;
 
-  gettimeofday(&t, &tzdummy);
-  return (unsigned int)(t.tv_usec);
+    gettimeofday(&t, &tzdummy);
+    return (unsigned int)(t.tv_usec);
 }
 
 /* Set the program parameters from the command-line arguments */
 void parameters(int argc, char **argv) {
-  int seed = 0;  /* Random seed */
-  char uid[32]; /*User name */
+    int seed = 0;  /* Random seed */
+    //char uid[32]; /*User name */
 
-  /* Read command-line arguments */
-  srand(time_seed());  /* Randomize */
+    /* Read command-line arguments */
+    srand(time_seed());  /* Randomize */
 
-  if (argc == 3) {
-    seed = atoi(argv[2]);
-    srand(seed);
-    printf("Random seed = %i\n", seed);
-  }
-  if (argc >= 2) {
-    N = atoi(argv[1]);
-    if (N < 1 || N > MAXN) {
-      printf("N = %i is out of range.\n", N);
-      exit(0);
+    if (argc == 3) {
+        seed = atoi(argv[2]);
+        srand(seed);
+        printf("Random seed = %i\n", seed);
     }
-  }
-  else {
-    printf("Usage: %s <matrix_dimension> [random seed]\n",
-           argv[0]);
-    exit(0);
-  }
+    if (argc >= 2) {
+        N = atoi(argv[1]);
+        if (N < 1 || N > MAXN) {
+            printf("N = %i is out of range.\n", N);
+            exit(0);
+        }
+    }
+    else {
+        printf("Usage: %s <matrix_dimension> [random seed]\n",
+        argv[0]);
+        exit(0);
+    }
 
-  /* Print parameters */
-  printf("\nMatrix dimension N = %i.\n", N);
+    /* Print parameters */
+    printf("\nMatrix dimension N = %i.\n", N);
 }
 
 /* Initialize A and B*/
@@ -111,99 +111,99 @@ void print_B() {
 
 
 int main(int argc, char **argv) {
-  /* Timing variables */
-  struct timeval etstart, etstop;  /* Elapsed times using gettimeofday() */
-  struct timezone tzdummy;
-  clock_t etstart2, etstop2;  /* Elapsed times using times() */
-  unsigned long long usecstart, usecstop;
-  struct tms cputstart, cputstop;  /* CPU times for my processes */
+    /* Timing variables */
+    struct timeval etstart, etstop;  /* Elapsed times using gettimeofday() */
+    struct timezone tzdummy;
+    clock_t etstart2, etstop2;  /* Elapsed times using times() */
+    unsigned long long usecstart, usecstop;
+    struct tms cputstart, cputstop;  /* CPU times for my processes */
 
-  /* Process program parameters */
-  parameters(argc, argv);
+    /* Process program parameters */
+    parameters(argc, argv);
 
-  /* Initialize A and B */
-  initialize_inputs();
+    /* Initialize A and B */
+    initialize_inputs();
 
-  /* Print input matrices */
-  print_inputs();
+    /* Print input matrices */
+    print_inputs();
 
-  /* Start Clock */
-  printf("\nStarting clock.\n");
-  gettimeofday(&etstart, &tzdummy);
-  etstart2 = times(&cputstart);
+    /* Start Clock */
+    printf("\nStarting clock.\n");
+    gettimeofday(&etstart, &tzdummy);
+    etstart2 = times(&cputstart);
 
-  /* Gaussian Elimination */
-  matrixNorm();
+    /* Gaussian Elimination */
+    matrixNorm();
 
-  /* Stop Clock */
-  gettimeofday(&etstop, &tzdummy);
-  etstop2 = times(&cputstop);
-  printf("Stopped clock.\n");
-  usecstart = (unsigned long long)etstart.tv_sec * 1000000 + etstart.tv_usec;
-  usecstop = (unsigned long long)etstop.tv_sec * 1000000 + etstop.tv_usec;
+    /* Stop Clock */
+    gettimeofday(&etstop, &tzdummy);
+    etstop2 = times(&cputstop);
+    printf("Stopped clock.\n");
+    usecstart = (unsigned long long)etstart.tv_sec * 1000000 + etstart.tv_usec;
+    usecstop = (unsigned long long)etstop.tv_sec * 1000000 + etstop.tv_usec;
 
-  /* Display output */
-  print_B();
+    /* Display output */
+    print_B();
 
-  /* Display timing results */
-  printf("\nElapsed time = %g ms.\n",
-	 (float)(usecstop - usecstart)/(float)1000);
+    /* Display timing results */
+    printf("\nElapsed time = %g ms.\n",
+    (float)(usecstop - usecstart)/(float)1000);
 
-  printf("(CPU times are accurate to the nearest %g ms)\n",
-	 1.0/(float)CLOCKS_PER_SEC * 1000.0);
-  printf("My total CPU time for parent = %g ms.\n",
-	 (float)( (cputstop.tms_utime + cputstop.tms_stime) -
-		  (cputstart.tms_utime + cputstart.tms_stime) ) /
-	 (float)CLOCKS_PER_SEC * 1000);
-  printf("My system CPU time for parent = %g ms.\n",
-	 (float)(cputstop.tms_stime - cputstart.tms_stime) /
-	 (float)CLOCKS_PER_SEC * 1000);
-  printf("My total CPU time for child processes = %g ms.\n",
-	 (float)( (cputstop.tms_cutime + cputstop.tms_cstime) -
-		  (cputstart.tms_cutime + cputstart.tms_cstime) ) /
-	 (float)CLOCKS_PER_SEC * 1000);
-      /* Contrary to the man pages, this appears not to include the parent */
-  printf("--------------------------------------------\n");
+    printf("(CPU times are accurate to the nearest %g ms)\n",
+    1.0/(float)CLOCKS_PER_SEC * 1000.0);
+    printf("My total CPU time for parent = %g ms.\n",
+    (float)( (cputstop.tms_utime + cputstop.tms_stime) -
+    (cputstart.tms_utime + cputstart.tms_stime) ) /
+    (float)CLOCKS_PER_SEC * 1000);
+    printf("My system CPU time for parent = %g ms.\n",
+    (float)(cputstop.tms_stime - cputstart.tms_stime) /
+    (float)CLOCKS_PER_SEC * 1000);
+    printf("My total CPU time for child processes = %g ms.\n",
+    (float)( (cputstop.tms_cutime + cputstop.tms_cstime) -
+    (cputstart.tms_cutime + cputstart.tms_cstime) ) /
+    (float)CLOCKS_PER_SEC * 1000);
+    /* Contrary to the man pages, this appears not to include the parent */
+    printf("--------------------------------------------\n");
 
-  exit(0);
+    exit(0);
 }
 
 /* ------------------ Above Was Provided --------------------- */
 
 /****** You will replace this routine with your own parallel version *******/
 /* Provided global variables are MAXN, N, A[][] and B[][],
- * defined in the beginning of this code.  B[][] is initialized to zeros.
- */
+* defined in the beginning of this code.  B[][] is initialized to zeros.
+*/
 
- #define CHECK_ERR(x)                                    \
-   if (x != cudaSuccess) {                               \
-     fprintf(stderr,"%s in %s at line %d\n",             \
-        cudaGetErrorString(err),__FILE__,__LINE__);	\
-     exit(-1);						\
-  }                                                    \
+#define CHECK_ERR(x)                                    \
+if (x != cudaSuccess) {                               \
+    fprintf(stderr,"%s in %s at line %d\n",             \
+    cudaGetErrorString(err),__FILE__,__LINE__);	\
+    exit(-1);						\
+}                                                    \
 
-  __global__ void normCalc (float *d_A, float *d_B, float *d_mu, float *d_sigma, int n) {
-      int col = blockIdx.x * blockDim.x + threadIdx.x;
-      int row;
-      if (col < n){
-          d_mu[col] = 0.0;
-          for (row=0; row < n; row++)
-              d_mu[col] += d_A[col*n+row];
-          d_mu[col] /= (float) n;
+__global__ void normCalc (float *d_A, float *d_B, float *d_mu, float *d_sigma, int n) {
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int row;
+    if (col < n){
+        d_mu[col] = (float)0.0;
+        for (row=0; row < n; row++)
+            d_mu[col] += d_A[col*n+row];
+        d_mu[col] /= (float) n;
 
-          d_sigma[col] = 0.0;
-          for (row=0; row < n; row++)
-              d_sigma[col] += powf(d_A[col*n+row] - d_mu[col], 2.0);
-          d_sigma[col] /= (float) n;
+        d_sigma[col] = (float)0.0;
+        for (row=0; row < n; row++)
+            d_sigma[col] += powf(d_A[col*n+row] - d_mu[col], (float)2.0);
+        d_sigma[col] /= (float) n;
 
-          for (row=0; row < n; row++) {
-              if (d_sigma[col] == 0.0)
-                  d_B[row*n+col] = 0.0;
-              else
-                  d_B[row*n+col] = (d_A[col*n+row] - d_mu[col]) / d_sigma[col];
-          }
-      }
-  }
+        for (row=0; row < n; row++) {
+            if (d_sigma[col] == (float)0.0)
+                d_B[row*n+col] = (float)0.0;
+            else
+                d_B[row*n+col] = (d_A[col*n+row] - d_mu[col]) / d_sigma[col];
+        }
+    }
+}
 
 
 void matrixNorm() {
@@ -236,7 +236,13 @@ void matrixNorm() {
     err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
-    dim3 BlockSize(1,N);
+    int x, y;
+    if(N < 10){
+        x = y = 1;
+    } else {
+        x = y = 64;
+    }
+    dim3 BlockSize(x,y);
     dim3 GridSize(N/BlockSize.x, N/BlockSize.y);
     normCalc<<<GridSize,BlockSize>>>(d_A, d_B, d_mu, d_sigma, N);
 
