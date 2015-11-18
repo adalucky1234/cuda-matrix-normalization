@@ -85,7 +85,7 @@ void initialize_inputs() {
 void print_inputs() {
   int row, col;
 
-  if (N < 10) {
+  if (N < 50) {
     printf("\nA =\n\t");
     for (row = 0; row < N; row++) {
       for (col = 0; col < N; col++) {
@@ -98,7 +98,7 @@ void print_inputs() {
 void print_B() {
     int row, col;
 
-    if (N < 10) {
+    if (N < 50) {
         printf("\nB =\n\t");
         for (row = 0; row < N; row++) {
             for (col = 0; col < N; col++) {
@@ -182,22 +182,10 @@ int main(int argc, char **argv) {
 
   __global__ void normCalc (float* d_A, float* d_B, float* d_mu, float* d_sigma, int n) {
     int col = blockDim.x * blockIdx.x + threadIdx.x;
-    int row;
-    if (col < n) {
-        for (row=0; row < n; row++)
-            d_mu[col] += d_A[col + n*row];
-        d_mu[col] /= (float) n;
-        __syncthreads();
-        for (row=0; row < n; row++)
-            d_sigma[col] += powf(d_A[col + n*row] - d_mu[col], 2.0);
-        d_sigma[col] /= (float) n;
-        __syncthreads();
-        for (row=0; row < n; row++) {
-            if (d_sigma[col] == 0.0)
-                d_B[col + n*row] = 0.0;
-            else
-                d_B[col + n*row]  = (d_A[col + n*row]  - d_mu[col]) / d_sigma[col];
-        }
+    int row = blockDim.y * blockIdx.y + threadIdx.y;
+    if (col < n && row < n) {
+        //for (row=0; row < n; row++)
+            d_B[row*n+col] = d_A[row*n+col];
     }
 }
 
@@ -215,13 +203,13 @@ void matrixNorm() {
 
     float *d_A, *d_B, *d_mu, *d_sigma;
 
-    err = cudaMalloc((float **) &d_A, sizeof(float)*N*N);
+    err = cudaMalloc((void **) &d_A, sizeof(float)*N*N);
     CHECK_ERR(err);
-    err = cudaMalloc((float **) &d_B, sizeof(float)*N*N);
+    err = cudaMalloc((void **) &d_B, sizeof(float)*N*N);
     CHECK_ERR(err);
-    err = cudaMalloc((float **) &d_mu, sizeof(float)*N*N);
+    err = cudaMalloc((void **) &d_mu, sizeof(float)*N*N);
     CHECK_ERR(err);
-    err = cudaMalloc((float **) &d_sigma, sizeof(float)*N*N);
+    err = cudaMalloc((void **) &d_sigma, sizeof(float)*N*N);
     CHECK_ERR(err);
 
 
