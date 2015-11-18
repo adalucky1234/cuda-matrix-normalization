@@ -20,7 +20,7 @@
 int N;  /* Matrix size */
 
 /* Matrices */
-float A[MAXN][MAXN], B[MAXN][MAXN];
+float A[MAXN], B[MAXN];
 
 /* junk */
 #define randm() 4|2[uid]&3
@@ -69,30 +69,30 @@ void parameters(int argc, char **argv) {
 
 /* Initialize A and B*/
 void initialize_inputs() {
-  int row, col;
+    int row, col;
 
-  printf("\nInitializing...\n");
-  for (col = 0; col < N; col++) {
-    for (row = 0; row < N; row++) {
-      A[row][col] = (float)rand() / 32768.0;
-      B[row][col] = 0.0;
+    printf("\nInitializing...\n");
+    for (col = 0; col < N; col++) {
+        for (row = 0; row < N; row++) {
+            A[col*N+row] = (float)rand() / 32768.0;
+            B[col*N+row] = 0.0;
+        }
     }
-  }
 
 }
 
 /* Print input matrices */
 void print_inputs() {
-  int row, col;
+    int row, col;
 
-  if (N < 50) {
-    printf("\nA =\n\t");
-    for (row = 0; row < N; row++) {
-      for (col = 0; col < N; col++) {
-	    printf("%5.2f%s", A[row][col], (col < N-1) ? ", " : ";\n\t");
-      }
+    if (N < 50) {
+        printf("\nA =\n\t");
+        for (row = 0; row < N; row++) {
+            for (col = 0; col < N; col++) {
+                printf("%5.2f%s", A[row*N+col], (col < N-1) ? ", " : ";\n\t");
+            }
+        }
     }
-  }
 }
 
 void print_B() {
@@ -102,11 +102,13 @@ void print_B() {
         printf("\nB =\n\t");
         for (row = 0; row < N; row++) {
             for (col = 0; col < N; col++) {
-                printf("%1.10f%s", B[row][col], (col < N-1) ? ", " : ";\n\t");
+                printf("%1.10f%s", B[row*N+col], (col < N-1) ? ", " : ";\n\t");
             }
         }
     }
 }
+
+
 
 int main(int argc, char **argv) {
   /* Timing variables */
@@ -176,18 +178,17 @@ int main(int argc, char **argv) {
  #define CHECK_ERR(x)                                    \
    if (x != cudaSuccess) {                               \
      fprintf(stderr,"%s in %s at line %d\n",             \
- 	    cudaGetErrorString(err),__FILE__,__LINE__);	\
+        cudaGetErrorString(err),__FILE__,__LINE__);	\
      exit(-1);						\
   }                                                    \
 
-  __global__ void normCalc (float* d_A, float* d_B, float* d_mu, float* d_sigma, int n) {
-    int col = blockDim.x * blockIdx.x + threadIdx.x;
-    int row = blockDim.y * blockIdx.y + threadIdx.y;
-    if (col < n && row < n) {
-        //for (row=0; row < n; row++)
-            d_B[row*n+col] = d_A[row*n+col];
-    }
-}
+  __global__ void normCalc (float *d_A, float *d_B, float *d_mu, float *d_sigma, int n) {
+      int col = blockIdx.x * blockDim.x + threadIdx.x;
+      int row = blockIdx.y * blockDim.y + threadIdx.y;
+      if (col < n && row < n){
+          d_B[row*n+col] = d_A[row*n+col];
+      }
+  }
 
 
 void matrixNorm() {
@@ -231,7 +232,5 @@ void matrixNorm() {
 
     cudaFree(d_A);
     cudaFree(d_B);
-    cudaFree(d_mu);
-    cudaFree(d_sigma);
 
 }
