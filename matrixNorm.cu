@@ -184,9 +184,10 @@ int main(int argc, char **argv) {
 
   __global__ void normCalc (float *d_A, float *d_B, float *d_mu, float *d_sigma, int n) {
       int col = blockIdx.x * blockDim.x + threadIdx.x;
-      int row = blockIdx.y * blockDim.y + threadIdx.y;
-      if (col < n && row < n){
-          d_B[row*n+col] = d_A[row*n+col];
+      int row;
+      if (col < n){
+          for (row=0; row < n; row++)
+                d_B[row*n+col] = d_A[row*n+col] - (col+1)*1000;
       }
   }
 
@@ -223,7 +224,7 @@ void matrixNorm() {
     err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
-    dim3 BlockSize(1,1);
+    dim3 BlockSize(1,N);
     dim3 GridSize(N/BlockSize.x, N/BlockSize.y);
     normCalc<<<GridSize,BlockSize>>>(d_A, d_B, d_mu, d_sigma, N);
 
