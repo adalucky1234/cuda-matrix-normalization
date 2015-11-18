@@ -20,7 +20,7 @@
 int N;  /* Matrix size */
 
 /* Matrices */
-float A[MAXN], B[MAXN];
+float A[MAXN*MAXN], B[MAXN*MAXN];
 
 /* junk */
 #define randm() 4|2[uid]&3
@@ -85,7 +85,7 @@ void initialize_inputs() {
 void print_inputs() {
     int row, col;
 
-    if (N < 50) {
+    if (N < 10) {
         printf("\nA =\n\t");
         for (row = 0; row < N; row++) {
             for (col = 0; col < N; col++) {
@@ -98,7 +98,7 @@ void print_inputs() {
 void print_B() {
     int row, col;
 
-    if (N < 50) {
+    if (N < 10) {
         printf("\nB =\n\t");
         for (row = 0; row < N; row++) {
             for (col = 0; col < N; col++) {
@@ -186,8 +186,22 @@ int main(int argc, char **argv) {
       int col = blockIdx.x * blockDim.x + threadIdx.x;
       int row;
       if (col < n){
+          d_mu[col] = 0.0;
           for (row=0; row < n; row++)
-                d_B[row*n+col] = d_A[row*n+col] - (col+1)*1000;
+              d_mu[col] += d_A[col*n+row];
+          d_mu[col] /= (float) n;
+
+          d_sigma[col] = 0.0;
+          for (row=0; row < n; row++)
+              d_sigma[col] += powf(d_A[col*n+row] - d_mu[col], 2.0);
+          d_sigma[col] /= (float) n;
+
+          for (row=0; row < n; row++) {
+              if (d_sigma[col] == 0.0)
+                  d_B[row*n+col] = 0.0;
+              else
+                  d_B[row*n+col] = (d_A[col*n+row] - d_mu[col]) / d_sigma[col];
+          }
       }
   }
 
@@ -198,10 +212,8 @@ void matrixNorm() {
 
     cudaError_t err;
 
-    float mu[N];
-    float sigma[N];
-    memset(mu, 0.0, sizeof(mu));
-    memset(sigma, 0.0, sizeof(sigma));
+    float mu[N*N];
+    float sigma[N*N];
 
     float *d_A, *d_B, *d_mu, *d_sigma;
 
