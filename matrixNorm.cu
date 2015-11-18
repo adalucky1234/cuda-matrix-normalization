@@ -108,73 +108,6 @@ void print_B() {
     }
 }
 
-
-
-int main(int argc, char **argv) {
-    /* Timing variables */
-    struct timeval etstart, etstop;  /* Elapsed times using gettimeofday() */
-    struct timezone tzdummy;
-    clock_t etstart2, etstop2;  /* Elapsed times using times() */
-    unsigned long long usecstart, usecstop;
-    struct tms cputstart, cputstop;  /* CPU times for my processes */
-
-    /* Process program parameters */
-    parameters(argc, argv);
-
-    /* Initialize A and B */
-    initialize_inputs();
-
-    /* Print input matrices */
-    print_inputs();
-
-    /* Start Clock */
-    printf("\nStarting clock.\n");
-    gettimeofday(&etstart, &tzdummy);
-    etstart2 = times(&cputstart);
-
-    /* Gaussian Elimination */
-    matrixNorm();
-
-    /* Stop Clock */
-    gettimeofday(&etstop, &tzdummy);
-    etstop2 = times(&cputstop);
-    printf("Stopped clock.\n");
-    usecstart = (unsigned long long)etstart.tv_sec * 1000000 + etstart.tv_usec;
-    usecstop = (unsigned long long)etstop.tv_sec * 1000000 + etstop.tv_usec;
-
-    /* Display output */
-    print_B();
-
-    /* Display timing results */
-    printf("\nElapsed time = %g ms.\n",
-    (float)(usecstop - usecstart)/(float)1000);
-
-    printf("(CPU times are accurate to the nearest %g ms)\n",
-    1.0/(float)CLOCKS_PER_SEC * 1000.0);
-    printf("My total CPU time for parent = %g ms.\n",
-    (float)( (cputstop.tms_utime + cputstop.tms_stime) -
-    (cputstart.tms_utime + cputstart.tms_stime) ) /
-    (float)CLOCKS_PER_SEC * 1000);
-    printf("My system CPU time for parent = %g ms.\n",
-    (float)(cputstop.tms_stime - cputstart.tms_stime) /
-    (float)CLOCKS_PER_SEC * 1000);
-    printf("My total CPU time for child processes = %g ms.\n",
-    (float)( (cputstop.tms_cutime + cputstop.tms_cstime) -
-    (cputstart.tms_cutime + cputstart.tms_cstime) ) /
-    (float)CLOCKS_PER_SEC * 1000);
-    /* Contrary to the man pages, this appears not to include the parent */
-    printf("--------------------------------------------\n");
-
-    exit(0);
-}
-
-/* ------------------ Above Was Provided --------------------- */
-
-/****** You will replace this routine with your own parallel version *******/
-/* Provided global variables are MAXN, N, A[][] and B[][],
-* defined in the beginning of this code.  B[][] is initialized to zeros.
-*/
-
 #define CHECK_ERR(x)                                    \
 if (x != cudaSuccess) {                               \
     fprintf(stderr,"%s in %s at line %d\n",             \
@@ -206,7 +139,22 @@ __global__ void normCalc (float *d_A, float *d_B, float *d_mu, float *d_sigma, i
 }
 
 
-void matrixNorm() {
+int main(int argc, char **argv) {
+    /* Timing variables */
+    struct timeval etstart, etstop;  /* Elapsed times using gettimeofday() */
+    struct timezone tzdummy;
+    //clock_t etstart2, etstop2;  /* Elapsed times using times() */
+    unsigned long long usecstart, usecstop;
+    struct tms cputstart, cputstop;  /* CPU times for my processes */
+
+    /* Process program parameters */
+    parameters(argc, argv);
+
+    /* Initialize A and B */
+    initialize_inputs();
+
+    /* Print input matrices */
+    print_inputs();
 
     printf("Computing in Parallel\n");
 
@@ -226,7 +174,6 @@ void matrixNorm() {
     err = cudaMalloc((void **) &d_sigma, sizeof(float)*N*N);
     CHECK_ERR(err);
 
-
     err = cudaMemcpy(d_A, A, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
@@ -236,6 +183,12 @@ void matrixNorm() {
     err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
+    /* Start Clock */
+    printf("\nStarting clock.\n");
+    gettimeofday(&etstart, &tzdummy);
+    times(&cputstart);
+
+    /* Gaussian Elimination */
     int x, y;
     if(N < 10){
         x = y = 1;
@@ -244,14 +197,45 @@ void matrixNorm() {
     }
     //dim3 BlockSize(x,y);
     //dim3 GridSize(N/BlockSize.x, N/BlockSize.y);
-    normCalc<<<64*64,64>>>(d_A, d_B, d_mu, d_sigma, N);
+    normCalc<<<x,y>>>(d_A, d_B, d_mu, d_sigma, N);
+
+    /* Stop Clock */
+    gettimeofday(&etstop, &tzdummy);
+    times(&cputstop);
+    printf("Stopped clock.\n");
+    usecstart = (unsigned long long)etstart.tv_sec * 1000000 + etstart.tv_usec;
+    usecstop = (unsigned long long)etstop.tv_sec * 1000000 + etstop.tv_usec;
 
     err = cudaMemcpy(B, (d_B), sizeof(float)*N*N, cudaMemcpyDeviceToHost);
     CHECK_ERR(err);
+
+    /* Display output */
+    print_B();
 
     cudaFree(d_A);
     cudaFree(d_B);
     cudaFree(d_mu);
     cudaFree(d_sigma);
 
+    /* Display timing results */
+    printf("\nElapsed time = %g ms.\n",
+    (float)(usecstop - usecstart)/(float)1000);
+
+    printf("(CPU times are accurate to the nearest %g ms)\n",
+    1.0/(float)CLOCKS_PER_SEC * 1000.0);
+    printf("My total CPU time for parent = %g ms.\n",
+    (float)( (cputstop.tms_utime + cputstop.tms_stime) -
+    (cputstart.tms_utime + cputstart.tms_stime) ) /
+    (float)CLOCKS_PER_SEC * 1000);
+    printf("My system CPU time for parent = %g ms.\n",
+    (float)(cputstop.tms_stime - cputstart.tms_stime) /
+    (float)CLOCKS_PER_SEC * 1000);
+    printf("My total CPU time for child processes = %g ms.\n",
+    (float)( (cputstop.tms_cutime + cputstop.tms_cstime) -
+    (cputstart.tms_cutime + cputstart.tms_cstime) ) /
+    (float)CLOCKS_PER_SEC * 1000);
+    /* Contrary to the man pages, this appears not to include the parent */
+    printf("--------------------------------------------\n");
+
+    exit(0);
 }
