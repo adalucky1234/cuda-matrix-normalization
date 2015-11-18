@@ -115,25 +115,29 @@ if (x != cudaSuccess) {                               \
     exit(-1);						\
 }                                                    \
 
-__global__ void normCalc (float *d_A, float *d_B, float *d_mu, float *d_sigma, int n) {
+__global__ void normCalc (float *d_A, float *d_B, int n) {
     int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int row;
+    int row, mu, sigma;
     if (col < n){
-        d_mu[col] = (float)0.0;
+        mu = (float)0.0;
         for (row=0; row < n; row++)
-            d_mu[col] += d_A[col*n+row];
-        d_mu[col] /= (float) n;
+            mu += d_A[col*n+row];
+        mu /= (float) n;
 
-        d_sigma[col] = (float)0.0;
+        __syncthreads();
+
+        sigma = (float)0.0;
         for (row=0; row < n; row++)
-            d_sigma[col] += powf(d_A[col*n+row] - d_mu[col], (float)2.0);
-        d_sigma[col] /= (float) n;
+            sigma += powf(d_A[col*n+row] - mu, (float)2.0);
+        sigma /= (float) n;
+
+        __syncthreads();
 
         for (row=0; row < n; row++) {
-            if (d_sigma[col] == (float)0.0)
+            if (sigma == (float)0.0)
                 d_B[row*n+col] = (float)0.0;
             else
-                d_B[row*n+col] = (d_A[col*n+row] - d_mu[col]) / d_sigma[col];
+                d_B[row*n+col] = (d_A[col*n+row] - mu) / sigma;
         }
     }
 }
@@ -160,27 +164,11 @@ int main(int argc, char **argv) {
 
     cudaError_t err;
 
-    float mu[N*N];
-    float sigma[N*N];
-
-    float *d_A, *d_B, *d_mu, *d_sigma;
+    float *d_A, *d_B;
 
     err = cudaMalloc((void **) &d_A, sizeof(float)*N*N);
     CHECK_ERR(err);
     err = cudaMalloc((void **) &d_B, sizeof(float)*N*N);
-    CHECK_ERR(err);
-    err = cudaMalloc((void **) &d_mu, sizeof(float)*N*N);
-    CHECK_ERR(err);
-    err = cudaMalloc((void **) &d_sigma, sizeof(float)*N*N);
-    CHECK_ERR(err);
-
-    err = cudaMemcpy(d_A, A, sizeof(float)*N*N, cudaMemcpyHostToDevice);
-    CHECK_ERR(err);
-
-    err = cudaMemcpy(d_mu, mu, sizeof(float)*N*N, cudaMemcpyHostToDevice);
-    CHECK_ERR(err);
-
-    err = cudaMemcpy(d_sigma, sigma, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
     /* Start Clock */
@@ -188,16 +176,16 @@ int main(int argc, char **argv) {
     gettimeofday(&etstart, &tzdummy);
     times(&cputstart);
 
+    err = cudaMemcpy(d_A, A, sizeof(float)*N*N, cudaMemcpyHostToDevice);
+    CHECK_ERR(err);
+
     /* Gaussian Elimination */
-    int x, y;
-    if(N < 10){
-        x = y = 1;
-    } else {
-        x = y = 64;
-    }
-    //dim3 BlockSize(x,y);
-    //dim3 GridSize(N/BlockSize.x, N/BlockSize.y);
-    normCalc<<<x,y>>>(d_A, d_B, d_mu, d_sigma, N);
+    int numBlocks = 32;
+    int numThreadsPerBlock = 64;
+    normCalc<<<numBlocks,numThreadsPerBlock>>>(d_A, d_B, N);
+
+    err = cudaMemcpy(B, (d_B), sizeof(float)*N*N, cudaMemcpyDeviceToHost);
+    CHECK_ERR(err);
 
     /* Stop Clock */
     gettimeofday(&etstop, &tzdummy);
@@ -206,16 +194,13 @@ int main(int argc, char **argv) {
     usecstart = (unsigned long long)etstart.tv_sec * 1000000 + etstart.tv_usec;
     usecstop = (unsigned long long)etstop.tv_sec * 1000000 + etstop.tv_usec;
 
-    err = cudaMemcpy(B, (d_B), sizeof(float)*N*N, cudaMemcpyDeviceToHost);
-    CHECK_ERR(err);
+
 
     /* Display output */
     print_B();
 
     cudaFree(d_A);
     cudaFree(d_B);
-    cudaFree(d_mu);
-    cudaFree(d_sigma);
 
     /* Display timing results */
     printf("\nElapsed time = %g ms.\n",
