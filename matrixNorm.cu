@@ -251,5 +251,7 @@ void matrixNorm() {
 
     cudaFree(d_A);
     cudaFree(d_B);
+    cudaFree(d_mu);
+    cudaFree(d_sigma);
 
 }
