@@ -117,7 +117,7 @@ if (x != cudaSuccess) {                               \
 
 __global__ void normCalc (float *d_A, float *d_B, int n) {
     int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int row, mu, sigma;
+    __shared__ int row, mu, sigma;
     if (col < n){
         mu = (float)0.0;
         for (row=0; row < n; row++)
