@@ -175,12 +175,11 @@ int main(int argc, char **argv) {
     CHECK_ERR(cudaEventCreate(&stop));
     CHECK_ERR(cudaEventRecord(start, 0));
 
-
     err = cudaMalloc((void **) &d_A, sizeof(float)*N*N);
     CHECK_ERR(err);
     err = cudaMalloc((void **) &d_B, sizeof(float)*N*N);
     CHECK_ERR(err);
-
+    
     err = cudaMemcpy(d_A, A, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
