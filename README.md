@@ -20,5 +20,5 @@ And then just run the program:
 
 ```sh
 Usage: ./norm.out <matrix_dimension> [random seed]
-Usage: ./gpunorm.out <matrix_dimension> [random seed]
+Usage: ./gpunorm.out <matrixDimension> <numBlocks> <numThreadsPerBlock> [randomSeed]
 ```
