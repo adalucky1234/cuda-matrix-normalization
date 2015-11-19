@@ -22,6 +22,9 @@ int N;  /* Matrix size */
 /* Matrices */
 float A[MAXN*MAXN], B[MAXN*MAXN];
 
+int numBlocks = 32;
+int numThreadsPerBlock = 64;
+
 /* junk */
 #define randm() 4|2[uid]&3
 
@@ -42,12 +45,20 @@ void parameters(int argc, char **argv) {
     /* Read command-line arguments */
     srand(time_seed());  /* Randomize */
 
-    if (argc == 3) {
-        seed = atoi(argv[2]);
+    if (argc == 5) {
+        seed = atoi(argv[4]);
         srand(seed);
-        printf("Random seed = %i\n", seed);
+        printf("Number of Blocks = %i\n", seed);
     }
-    if (argc >= 2) {
+    if (argc >= 4) {
+        numThreadsPerBlock = atoi(argv[3]);
+        srand(seed);
+        printf("Random seed = %i\n", numThreadsPerBlock);
+
+        numBlocks = atoi(argv[2]);
+        srand(seed);
+        printf("Number of Threads Per Block = %i\n", numBlocks);
+
         N = atoi(argv[1]);
         if (N < 1 || N > MAXN) {
             printf("N = %i is out of range.\n", N);
@@ -55,7 +66,7 @@ void parameters(int argc, char **argv) {
         }
     }
     else {
-        printf("Usage: %s <matrix_dimension> [random seed]\n",
+        printf("Usage: %s <matrixDimension> <numBlocks> <numThreadsPerBlock> [randomSeed]\n",
         argv[0]);
         exit(0);
     }
@@ -184,8 +195,6 @@ int main(int argc, char **argv) {
     CHECK_ERR(err);
 
     /* Gaussian Elimination */
-    int numBlocks = 32;
-    int numThreadsPerBlock = 64;
     normCalc<<<numBlocks,numThreadsPerBlock>>>(d_A, d_B, N);
 
     err = cudaMemcpy(B, (d_B), sizeof(float)*N*N, cudaMemcpyDeviceToHost);
