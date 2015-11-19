@@ -111,7 +111,7 @@ void print_B() {
 #define CHECK_ERR(x)                                    \
 if (x != cudaSuccess) {                               \
     fprintf(stderr,"%s in %s at line %d\n",             \
-    cudaGetErrorString(err),__FILE__,__LINE__);	\
+    cudaGetErrorString(x),__FILE__,__LINE__);	\
     exit(-1);						\
 }                                                    \
 
@@ -151,6 +151,9 @@ int main(int argc, char **argv) {
     unsigned long long usecstart, usecstop;
     struct tms cputstart, cputstop;  /* CPU times for my processes */
 
+    float elapsed=0;
+    cudaEvent_t start, stop;
+
     /* Process program parameters */
     parameters(argc, argv);
 
@@ -166,15 +169,20 @@ int main(int argc, char **argv) {
 
     float *d_A, *d_B;
 
-    err = cudaMalloc((void **) &d_A, sizeof(float)*N*N);
-    CHECK_ERR(err);
-    err = cudaMalloc((void **) &d_B, sizeof(float)*N*N);
-    CHECK_ERR(err);
-
     /* Start Clock */
     printf("\nStarting clock.\n");
     gettimeofday(&etstart, &tzdummy);
     times(&cputstart);
+
+    CHECK_ERR(cudaEventCreate(&start));
+    CHECK_ERR(cudaEventCreate(&stop));
+    CHECK_ERR(cudaEventRecord(start, 0));
+
+
+    err = cudaMalloc((void **) &d_A, sizeof(float)*N*N);
+    CHECK_ERR(err);
+    err = cudaMalloc((void **) &d_B, sizeof(float)*N*N);
+    CHECK_ERR(err);
 
     err = cudaMemcpy(d_A, A, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
@@ -195,6 +203,13 @@ int main(int argc, char **argv) {
     usecstop = (unsigned long long)etstop.tv_sec * 1000000 + etstop.tv_usec;
 
 
+    CHECK_ERR(cudaEventRecord(stop, 0));
+    CHECK_ERR(cudaEventSynchronize (stop) );
+
+    CHECK_ERR(cudaEventElapsedTime(&elapsed, start, stop) );
+
+    CHECK_ERR(cudaEventDestroy(start));
+    CHECK_ERR(cudaEventDestroy(stop));
 
     /* Display output */
     print_B();
@@ -206,7 +221,9 @@ int main(int argc, char **argv) {
     printf("\nElapsed time = %g ms.\n",
     (float)(usecstop - usecstart)/(float)1000);
 
-    printf("(CPU times are accurate to the nearest %g ms)\n",
+    printf("\nThe elapsed time in gpu was %.2f ms\n", elapsed);
+
+    printf("\n(CPU times are accurate to the nearest %g ms)\n",
     1.0/(float)CLOCKS_PER_SEC * 1000.0);
     printf("My total CPU time for parent = %g ms.\n",
     (float)( (cputstop.tms_utime + cputstop.tms_stime) -
