@@ -25,9 +25,6 @@ float A[MAXN*MAXN], B[MAXN*MAXN];
 /* junk */
 #define randm() 4|2[uid]&3
 
-/* Prototype */
-void matrixNorm();
-
 /* returns a seed for srand based on the time */
 unsigned int time_seed() {
     struct timeval t;
