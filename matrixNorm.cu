@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
     CHECK_ERR(err);
     err = cudaMalloc((void **) &d_B, sizeof(float)*N*N);
     CHECK_ERR(err);
-    
+
     err = cudaMemcpy(d_A, A, sizeof(float)*N*N, cudaMemcpyHostToDevice);
     CHECK_ERR(err);
 
@@ -197,7 +197,6 @@ int main(int argc, char **argv) {
     printf("Stopped clock.\n");
     usecstart = (unsigned long long)etstart.tv_sec * 1000000 + etstart.tv_usec;
     usecstop = (unsigned long long)etstop.tv_sec * 1000000 + etstop.tv_usec;
-
 
     CHECK_ERR(cudaEventRecord(stop, 0));
     CHECK_ERR(cudaEventSynchronize (stop) );
