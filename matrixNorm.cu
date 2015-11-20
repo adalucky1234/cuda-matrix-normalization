@@ -48,16 +48,16 @@ void parameters(int argc, char **argv) {
     if (argc == 5) {
         seed = atoi(argv[4]);
         srand(seed);
-        printf("Number of Blocks = %i\n", seed);
+        printf("Random Seed = %i\n", seed);
     }
     if (argc >= 4) {
         numThreadsPerBlock = atoi(argv[3]);
         srand(seed);
-        printf("Random seed = %i\n", numThreadsPerBlock);
+        printf("Number of Threads Per Block = %i\n", numThreadsPerBlock);
 
         numBlocks = atoi(argv[2]);
         srand(seed);
-        printf("Number of Threads Per Block = %i\n", numBlocks);
+        printf("Number of Blocks = %i\n", numBlocks);
 
         N = atoi(argv[1]);
         if (N < 1 || N > MAXN) {
