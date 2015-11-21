@@ -1,5 +1,5 @@
 /* Matrix normalization.
- * Compile with "gcc matrixNorm.c" 
+ * Compile with "gcc matrixNorm.c"
  */
 
 /* ****** ADD YOUR CODE AT THE END OF THIS FILE. ******
@@ -49,7 +49,7 @@ void parameters(int argc, char **argv) {
     seed = atoi(argv[2]);
     srand(seed);
     printf("Random seed = %i\n", seed);
-  } 
+  }
   if (argc >= 2) {
     N = atoi(argv[1]);
     if (N < 1 || N > MAXN) {
@@ -59,7 +59,7 @@ void parameters(int argc, char **argv) {
   }
   else {
     printf("Usage: %s <matrix_dimension> [random seed]\n",
-           argv[0]);    
+           argv[0]);
     exit(0);
   }
 
@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
 	 (float)CLOCKS_PER_SEC * 1000);
       /* Contrary to the man pages, this appears not to include the parent */
   printf("--------------------------------------------\n");
-  
+
   exit(0);
 }
 
@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
  * defined in the beginning of this code.  B[][] is initialized to zeros.
  */
 void matrixNorm() {
-  int row, col; 
+  int row, col;
   float mu, sigma; // Mean and Standard Deviation
 
   printf("Computing Serially.\n");
@@ -187,6 +187,7 @@ void matrixNorm() {
         for (row=0; row < N; row++)
             sigma += powf(A[row][col] - mu, 2.0);
         sigma /= (float) N;
+        sigma = sqrt(sigma);
         for (row=0; row < N; row++) {
             if (sigma == 0.0)
                 B[row][col] = 0.0;

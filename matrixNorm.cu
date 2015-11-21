@@ -141,6 +141,8 @@ __global__ void normCalc (float *d_A, float *d_B, int n) {
 
         __syncthreads();
 
+        sigma = sqrt(sigma);
+
         for (row=0; row < n; row++) {
             if (sigma == (float)0.0)
                 d_B[row*n+col] = (float)0.0;
